@@ -4,7 +4,7 @@
 
 # Lesson 1&2
 
-## Spring Security 설정
+### Spring Security 설정
 - SecurityConfig.java
 
 ```java
@@ -30,7 +30,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
 # Lesson 3
 
-## 회원가입시 설정한 비밀번호 인코딩하기 
+### 회원가입시 설정한 비밀번호 인코딩하기 
 
 - SecurityConfig.java 
 
