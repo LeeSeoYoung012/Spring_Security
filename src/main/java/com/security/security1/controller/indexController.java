@@ -1,12 +1,21 @@
 package com.security.security1.controller;
 
 import com.security.security1.Repository.UserRepository;
+import com.security.security1.config.auth.PrincipalDetails;
 import com.security.security1.model.User;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.annotation.Secured;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 @Controller //View를 리턴하겠다.
 public class indexController {
@@ -17,29 +26,57 @@ public class indexController {
     @Autowired
     private BCryptPasswordEncoder bCryptPasswordEncoder;
 
+    //구글로그인을 했을 떄 세션정보 확인 Test
+    @GetMapping("/test/oauth/login")
+   public @ResponseBody String testOAuthLogin(Authentication authentication, @AuthenticationPrincipal OAuth2User oauth){ //DI 의존성 주입
+        System.out.println("/test/login===========");
+        OAuth2User oauth2User = (OAuth2User) authentication.getPrincipal();
+        System.out.println("authentication:"+oauth2User.getAttributes());
+        System.out.println("oauth2User:"+oauth.getAttributes());
+        return "OAuth 세션정보 확인하기";
+   }
+
+   //그냥 로그인 했을때 세션정보 확인 Test
+    @GetMapping("/test/login")
+    public @ResponseBody String testLogin(Authentication authentication, @AuthenticationPrincipal UserDetails userDetails){ //DI 의존성 주입
+        System.out.println("/test/login===========");
+        PrincipalDetails principalDetails = (PrincipalDetails) authentication.getPrincipal();
+        System.out.println("authentication:"+principalDetails.getUser());//유저의 이름을 받는 방법1
+        System.out.println("userDetails:"+userDetails.getUsername());//유저의 이름을 받는 방법2
+
+        return "세션정보 확인하기";
+    }
+
+
     @GetMapping({"","/"})
     public String index(){
         //머스테치 기본폴더 src/main/resources
         return "index";
     }
 
+    //OAuthDetialsService, DetailsService를 굳이 만든 이유도 principalDetails를 반환하기 위한것
+    //OAuth 로그인을 해도 PrincipalDetails 로 받을 수 있고
+    // 일반 로그인을 해도 PrincipalDetails로 받을 수 있다.
     @GetMapping("/user")
-    public String user(){
+    public @ResponseBody  String user(@AuthenticationPrincipal PrincipalDetails principalDetails)
+    {
+        System.out.println("principalDetails:"+principalDetails.getUser());
         return "user";
     }
 
     @GetMapping("/admin")
-    public String admin(){
+    public @ResponseBody
+    String admin(){
         return "admin";
     }
 
     @GetMapping("/manager")
-    public String manager(){
+    public @ResponseBody  String  manager(){
         return "manager";
     }
 
     @GetMapping("/joinForm")
-    public String joinForm(){
+    public  String joinForm(){
         return "joinForm";
     }
 
@@ -60,6 +97,22 @@ public class indexController {
         userRepository.save(user);// 비밀번호 1234 일경우 시큐리티로 로그인할 수 없음
         return "redirect:/loginForm"; //리다이렉트는 함수 재사용이 가능하다.
     }
+
+    @Secured("ROLE_ADMIN") //Role_admin만 해당 뷰를 볼수 있음.
+    @GetMapping("/info")
+    public @ResponseBody String info(){
+        return "개인정보";
+    }
+
+
+    //prePostEnable 을 해놨기 때문에 PostAuthorize 또한 쓰게 된다.
+    @PreAuthorize("hasRole('ROLE_MANAGER') or hasRole('ROLE_ADMIN')")  //여러개가 걸릴 수 있다.
+    @GetMapping("/data")
+    public @ResponseBody String data(){
+        return "데이터 정보";
+    }
+
+
 
 
 }
